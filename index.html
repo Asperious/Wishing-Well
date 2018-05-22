@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Wishing Well</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/jquery-ui.min.css">
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+        <script src="js/jquery-ui.min.js"></script>
+        <script src="js/nebulas.js"></script>
+        <script src="js/nebPay.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <script>
+
+        var contractAddress = "n1mXdVuHyDG2vN4JR7HRpwy8NaMwmWgexDd"
+        var searchvalue = document.getElementById("searchValue")
+        var nameValue = document.getElementById("nameText")
+        var wishValue = document.getElementById("wishText")
+
+        var nebPay
+
+        var nebulas = require("nebulas"),
+        Account = nebulas.Account,
+        neb = new nebulas.Neb();
+        neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io"));
+
+        document.addEventListener("DOMContentLoaded", function () {
+            populate();
+            setTimeout(checkWebWallet, 1000);
+        });
+
+        function checkWebWallet() {
+            try {
+                var webWallet = require("nebpay");
+                nebPay = new webWallet();
+            } catch (e) {
+                console.log(e);
+                if (window.confirm('Nebulas chrome webwallet is needed to use this site, click "Cancel" if you have already installed, if not click "OK" to go to download page')) {
+                    window.location.href = 'https://github.com/ChengOrangeJu/WebExtensionWallet';
+                }
+            }
+        }
+
+        function search() {
+            document.getElementById("wishList").innerHTML = '<h1><i class="fa fa-spinner fa-spin" ></i></h1>';
+            searchvalue = document.getElementById("searchValue").value
+            var from = Account.NewAccount().getAddressString();
+            var value = "0";
+            var nonce = "0"
+            var gas_price = "1000000"
+            var gas_limit = "2000000"
+            var callFunction = "iterate";
+            var callArgs = "[\"" + searchvalue + "\"]";
+
+            var contract = {
+                "function": callFunction,
+                "args": callArgs
+            }
+
+            neb.api.call(from,contractAddress,value,nonce,gas_price,gas_limit, contract).then(function (resp) {
+                searchList(resp, searchvalue)
+            }).catch(function (err) {
+                console.log("error:" + err.message)
+            })
+        }
+
+        function populate(){
+            document.getElementById("wishList").innerHTML = '<h1><i class="fa fa-spinner fa-spin" ></i></h1>';
+            var from = Account.NewAccount().getAddressString();
+            var value = "0";
+            var nonce = "0"
+            var gas_price = "1000000"
+            var gas_limit = "2000000"
+            var callFunction = "iterate";
+            var callFunction2 = "len";
+            var callArgs = "[\"everything\"]";
+
+            var contract = {
+                "function": callFunction,
+                "args": callArgs
+            }
+            var contract2 = {
+                "function": callFunction2,
+                "args": callArgs
+            }
+
+            neb.api.call(from,contractAddress,value,nonce,gas_price,gas_limit, contract).then(function (resp) {
+                wishList(resp)
+            }).catch(function (err) {
+                console.log("error:" + err.message)
+            })
+            neb.api.call(from,contractAddress,value,nonce,gas_price,gas_limit, contract2).then(function (resp) {
+                wishCounter(resp)
+            }).catch(function (err) {
+                console.log("error:" + err.message)
+            })
+        }
+
+        function wishList(resp) {
+            var result = resp.result    ////resp is an object, resp.result is a JSON string
+            var resultText = "";
+
+            if (result === 'null'){
+                document.getElementById("result").innerHTML = `<h1> Null </h1>`;
+            } else{
+                try{
+                    result = JSON.parse(result)
+                }catch (err){
+            }
+
+            if (!!result.key){
+                document.getElementById("wishList").innerHTML = "Failed to retrieve wishes";
+            } else {
+                var resultSplit = result.split("760120");
+                for (var i = 0; i < resultSplit.length; i++){
+                    resultText += '<tr><th>'+ resultSplit[i] +'</th></tr>';
+                }
+                document.getElementById("wishList").innerHTML = resultText;
+            }
+            }
+        }
+
+        function searchList(resp, search) {
+            var result = resp.result    ////resp is an object, resp.result is a JSON string
+            var resultText = "";
+
+            if (result === 'null'){
+                document.getElementById("result").innerHTML = `<h1> Null </h1>`;
+            } else{
+                try{
+                    result = JSON.parse(result)
+                }catch (err){
+            }
+
+            if (!!result.key){
+                document.getElementById("wishList").innerHTML = "Failed to retrieve wishes";
+            } else {
+                var resultSplit = result.split("760120");
+                var resultIgnoreCase = result.split("760120");
+                for (var i = 0; i < resultSplit.length; i++){
+                    if(resultIgnoreCase[i].toLowerCase().includes(search.toLowerCase())){
+                        resultText += '<tr><th>'+ resultSplit[i] +'</th></tr>';
+                    }
+                }
+                if(resultText != "") {
+                    document.getElementById("wishList").innerHTML = resultText;
+                }else {
+                    document.getElementById("wishList").innerHTML = "<div style='text-align:center'><b>No Match Found</b></div>";
+                }
+            }
+            }
+        }
+
+        function wishCounter(resp) {
+        var result = resp.result    ////resp is an object, resp.result is a JSON string
+        if (result === 'null' || result == ""){
+            document.getElementById("wishCounter").innerHTML = `Wishing Well Height: 0m`;
+        } else{
+            //if result is not null, then it should be "return value" or "error message"
+            try{
+                result = JSON.parse(result)
+            }catch (err){
+                //result is the error message
+            }
+            if (!!result.key){      //"return value"
+                document.getElementById("wishCounter").innerHTML = 'Wishing Well Height: ' + result.value + 'm';
+            } else {        //"error message"
+                document.getElementById("wishCounter").innerHTML = 'Wishing Well Height: ' + result + 'm';
+            }
+            }
+        }  
+
+        $(window).bind("load",function() {
+            var dialog, form,
+            name = $( "#nameText" ),
+            wish = $( "#wishText" ),
+            allFields = $( [] ).add( name ).add( wish ).
+            tips = $( ".validateTips" );
+
+            function checkLength( o, n, min, max ) {
+                if ( o.val().length > max || o.val().length < min ) {
+                    o.addClass( "ui-state-error" );
+                    updateTips( "Length of " + n + " must be between " +
+                    min + " and " + max + "." );
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            function addWish() {
+                if(checkLength(name, "Name", 1, 20) && checkLength(wish, "Wish", 1, 50)){
+                nameValue = document.getElementById("nameText").value
+                wishValue = document.getElementById("wishText").value
+                console.log("Adding to smart contract");
+                var func = "set"
+                var args = "[\"" + nameValue + "\",\"" + wishValue + "\"]";
+                window.postMessage({
+                    "target": "contentscript",
+                    "data": {
+                        "to": contractAddress,
+                        "value": "0",
+                        "contract": {
+                            "function": func,
+                            "args": args
+                        }
+                    },
+                    "method": "neb_sendTransaction"
+                }, "*");
+                $( "#dialog-form" ).dialog("close");
+                }
+            }
+ 
+            dialog = $( "#dialog-form" ).dialog({
+                autoOpen: false,
+                height: 600,
+                width: 450,
+                modal: true,
+                buttons: {
+                    "Submit Wish": addWish,
+                    Cancel: function() {
+                        dialog.dialog( "close" );
+                    }
+                },
+                    close: function() {
+                        form[ 0 ].reset();
+                        allFields.removeClass( "ui-state-error" );
+                    }
+                });
+ 
+            form = dialog.find( "form" ).on( "submit", function( event ) {
+                event.preventDefault();
+                addWish();
+            });
+ 
+            $( "#wishButton" ).button().on( "click", function() {
+                dialog.dialog( "open" );
+            });
+        });
+        </script>
+        <style>
+            body {
+                height: 200px;
+                background-image: url("images/bgblue.jpg");
+                background-repeat: repeat;
+                background-attachment: fixed;
+                background-position: center; 
+            }
+
+            .BannerTitle {
+                text-align: center;
+                font-size: 20px;
+                font-family: Impact, Charcoal, sans-serif;
+            }
+
+            h1 {
+                font-size: 100px;
+            }
+
+            #searchValue {
+                border-radius: 5px;
+            }
+
+            #wishHeader {
+                text-align: center;
+                font-size: 30px;
+                order-width: 0px;
+            }
+
+            #wishes {
+                border-style: solid;
+                border-width: 2px;
+                border-radius: 25px;
+                background-color: rgba(135,206,250,0.4);
+
+            }
+
+            #wish-submit, #wishList ,#wishList tr, #wishCounter {
+                text-align: center;
+            }
+
+            #wishHeaderTable {
+                border-style: hidden;
+            }
+
+            #dialog-form {
+                background-color: rgba(135,206,250,0.4);
+            }
+
+            .red {
+                color: #fb607f;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="container" id="wrapper">
+            <div class="BannerTitle"><h1>Wishing Well 许愿井 <i class="fa fa-heart red" ></i></h1><input class="input" id="searchValue" placeholder="    Search for Wishes" size="30">
+                <button type="button" class="btn-sm" onclick="search()">Search</button></div>
+           <br>
+            <div id="wish-submit">
+<button type="button" class="btn-lg" id="wishButton">Submit Wishes</button>
+</div>
+            <br>
+            <div style="text-align: center">
+                <p>Here lies a digital wishing well of the world, may your wishes come true!</p>
+                <p>数码世界的许愿井，愿你愿望成真.</p>
+            </div>
+            <br>
+                <div id="wishCounter">Wishing Well Height: 0m</div>
+                <div class="col-md-12" id="wishes">
+                    <div class="row">
+                        <table class="table" id="wishHeaderTable">
+                            <tr>
+                                <td id="wishHeader"><b>Wishes</b></td>
+                            </tr>
+                        </table>
+                        <div class="col-md-12" align="center">
+                            <table class="table table-striped" id="wishList">
+                               
+                            </table>
+                            
+        </div>
+    </div>
+</div>
+<br>
+
+
+     <div id="dialog-form" title="May Your Wishes Come True" style="display:none">
+        <p class="validateTips">All form fields are required.</p>
+        <p>Nebulas webwallet is needed to send in your wish :)<br>You can download it <a href='https://github.com/ChengOrangeJu/WebExtensionWallet'><u style="color:blue">here</u></a>.</p>
+  <form>
+    <fieldset>
+      <label for="nameText">Name(名字):</label>
+      <br>
+      <input type="text" name="nameText" id="nameText" class="text ui-widget-content ui-corner-all" style="width:100%">
+      <br>
+      <br>
+      <label for="wishText">Wish(愿望):</label>
+      <br>
+      <textarea id="wishText" maxlength="50" name="wishText" class="text ui-widget-content ui-corner-all" style="width:100%; height:120px"></textarea>
+      <br>
+      (Characters max: 50)
+      <br>
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+  </form>
+</div>
+
+</body>
+</html>
