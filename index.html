@@ -13,7 +13,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <script>
 
-        var contractAddress = "n1mXdVuHyDG2vN4JR7HRpwy8NaMwmWgexDd"
+        var contractAddress = "n1vkkfEaa6wnHNsX4jCT9BpSeU6CZVeJU79"
         var searchvalue = document.getElementById("searchValue")
         var nameValue = document.getElementById("nameText")
         var wishValue = document.getElementById("wishText")
@@ -23,7 +23,7 @@
         var nebulas = require("nebulas"),
         Account = nebulas.Account,
         neb = new nebulas.Neb();
-        neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io"));
+        neb.setRequest(new nebulas.HttpRequest("https://mainnet.nebulas.io"));
 
         document.addEventListener("DOMContentLoaded", function () {
             populate();
