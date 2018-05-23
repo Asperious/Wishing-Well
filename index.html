@@ -24,6 +24,18 @@
         Account = nebulas.Account,
         neb = new nebulas.Neb();
         neb.setRequest(new nebulas.HttpRequest("https://mainnet.nebulas.io"));
+            
+            $(document).ready(function() {
+            try {
+                $('body').ripples({
+                    resolution: 512,
+                    dropRadius: 20,
+                    perturbance: 0.5,
+                });
+            }
+            catch (e) {
+            }
+        });
 
         document.addEventListener("DOMContentLoaded", function () {
             populate();
@@ -246,6 +258,9 @@
                 background-repeat: repeat;
                 background-attachment: fixed;
                 background-position: center; 
+                background-size: cover;
+                background-position: 50% 0;
+                height: 100%;
             }
 
             .BannerTitle {
